@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jmu.lx.lab.mapper.ScheduleMapper">
+
+    <sql id="Base_Column_List">
+        id,semester_id,lab_type,lab_id,start_week,end_week,week,session_id,course_name,teacher_id,clazz,number,status
+    </sql>
+
+    <select id="selectAll" resultType="jmu.lx.lab.entity.Schedule">
+        select schedule.*, semester.name as semesterName, lab.number as labNumber, teacher.name as teacherName, session.name as sessionName
+        from schedule
+        left join semester on schedule.semester_id = semester.id
+        left join lab on schedule.lab_id = lab.id
+        left join teacher on schedule.teacher_id = teacher.id
+        left join session on schedule.session_id = session.id
+        <where>
+            <if test="id != null"> and id= #{id}</if>
+            <if test="teacherId != null"> and schedule.teacher_id= #{teacherId}</if>
+            <if test="sessionId != null"> and schedule.session_id= #{sessionId}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectById" resultType="jmu.lx.lab.entity.Schedule">
+        select
+        <include refid="Base_Column_List" />
+        from schedule
+        where id = #{id}
+    </select>
+
+    <delete id="deleteById">
+        delete from schedule
+        where  id = #{id}
+    </delete>
+
+    <insert id="insert" parameterType="jmu.lx.lab.entity.Schedule" useGeneratedKeys="true">
+        insert into schedule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test="id != null">id,</if>
+                <if test="semesterId != null">semester_id,</if>
+                <if test="labType != null">lab_type,</if>
+                <if test="startWeek != null">start_week,</if>
+                <if test="endWeek != null">end_week,</if>
+                <if test="week != null">week,</if>
+                <if test="sessionId != null">session_id,</if>
+                <if test="courseName != null">course_name,</if>
+                <if test="teacherId != null">teacher_id,</if>
+                <if test="clazz != null">clazz,</if>
+                <if test="number != null">number,</if>
+                <if test="status != null">status,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="labType != null">#{labType},</if>
+            <if test="startWeek != null">#{startWeek},</if>
+            <if test="endWeek != null">#{endWeek},</if>
+            <if test="week != null">#{week},</if>
+            <if test="sessionId != null">#{sessionId},</if>
+            <if test="courseName != null">#{courseName},</if>
+            <if test="teacherId != null">#{teacherId},</if>
+            <if test="clazz != null">#{clazz},</if>
+            <if test="number != null">#{number},</if>
+            <if test="status != null">#{status},</if>
+        </trim>
+    </insert>
+
+    <update id="updateById" parameterType="jmu.lx.lab.entity.Schedule">
+        update schedule
+        <set>
+            <if test="id != null">
+                id = #{id},
+            </if>
+            <if test="semesterId != null">
+                semester_id = #{semesterId},
+            </if>
+            <if test="labType != null">
+                lab_type = #{labType},
+            </if>
+            <if test="startWeek != null">
+                start_week = #{startWeek},
+            </if>
+            <if test="endWeek != null">
+                end_week = #{endWeek},
+            </if>
+            <if test="week != null">
+                week = #{week},
+            </if>
+            <if test="sessionId != null">
+                session_id = #{sessionId},
+            </if>
+            <if test="courseName != null">
+                course_name = #{courseName},
+            </if>
+            <if test="teacherId != null">
+                teacher_id = #{teacherId},
+            </if>
+            <if test="clazz != null">
+                clazz = #{clazz},
+            </if>
+            <if test="number != null">
+                number = #{number},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        where id = #{id} 
+    </update>
+
+    <select id="isScheduled" parameterType="jmu.lx.lab.entity.Borrow" resultType="int">
+        SELECT COUNT(*)
+        FROM schedule
+        WHERE lab_id = #{labId}
+          AND semester_id = #{semesterId}
+          AND #{week} BETWEEN start_week AND end_week
+          AND week = #{day}
+          AND session_id = #{sessionId}
+    </select>
+
+    <select id="selectFreeLabs" parameterType="jmu.lx.lab.entity.Schedule" resultType="jmu.lx.lab.entity.Lab">
+        SELECT l.*
+        FROM lab l
+        WHERE l.type = #{labType}
+        AND l.equipment_count >= #{number}
+        AND NOT EXISTS (
+            SELECT 1
+            FROM schedule s
+            WHERE s.lab_id = l.id
+            AND s.semester_id = #{semesterId}
+            AND s.start_week > #{endWeek}
+            AND s.end_week &lt; #{startWeek}
+            AND s.week = #{week}
+            AND s.session_id = #{sessionId}
+            AND s.status = '已排课'
+        )
+    </select>
+
+    <update id="doScheduled" parameterType="jmu.lx.lab.entity.Schedule">
+        update schedule
+        set lab_id = #{labId},
+            status = '已排课'
+        where id = #{id}
+    </update>
+
+    <select id="findCourse" parameterType="jmu.lx.lab.entity.Schedule" resultType="jmu.lx.lab.entity.Schedule">
+        select schedule.*, lab.name as labName, lab.number as labNumber, teacher.name as teacherName, session.name as sessionName
+        from schedule
+        left join lab on schedule.lab_id = lab.id
+        left join teacher on schedule.teacher_id = teacher.id
+        left join session on schedule.session_id = session.id
+        <where>
+            <if test="week != null"> and week= #{week}</if>
+            <if test="labId != null"> and schedule.lab_id= #{labId}</if>
+            <if test="teacherId != null"> and schedule.teacher_id= #{teacherId}</if>
+            <if test="sessionId != null"> and schedule.session_id= #{sessionId}</if>
+            <if test="status != null"> and schedule.status= '已排课'</if>
+        </where>
+        order by field(week, '周一', '周二', '周三', '周四', '周五', '周六', '周日') asc
+        </select>
+
+</mapper>

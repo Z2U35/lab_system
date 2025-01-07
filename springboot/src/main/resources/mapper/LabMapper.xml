@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jmu.lx.lab.mapper.LabMapper">
+
+    <sql id="Base_Column_List">
+        id,number,name,type,equipment_count,labadmin_id
+    </sql>
+
+    <select id="selectAll" resultType="jmu.lx.lab.entity.Lab">
+        select lab.*, lab_admin.name as labadminName
+        from lab
+        left join lab_admin on lab.labadmin_id = lab_admin.id
+        <where>
+            <if test="id != null"> and id= #{id}</if>
+            <if test="name != null"> and lab.name like concat('%', #{name}, '%')</if>
+            <if test="type != null"> and type= #{type}</if>
+            <if test="number != null"> and number like concat('%', #{number}, '%')</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectById" resultType="jmu.lx.lab.entity.Lab">
+        select
+        <include refid="Base_Column_List" />
+        from lab
+        where id = #{id}
+    </select>
+
+    <delete id="deleteById">
+        delete from lab
+        where  id = #{id}
+    </delete>
+
+    <insert id="insert" parameterType="jmu.lx.lab.entity.Lab" useGeneratedKeys="true">
+        insert into lab
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test="id != null">id,</if>
+                <if test="number != null">number,</if>
+                <if test="name != null">name,</if>
+                <if test="type != null">type,</if>
+                <if test="equipmentCount != null">equipment_count,</if>
+                <if test="labadminId != null">labadmin_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+                <if test="id != null">#{id},</if>
+                <if test="number != null">#{number},</if>
+                <if test="name != null">#{name},</if>
+                <if test="type != null">#{type},</if>
+                <if test="equipmentCount != null">#{equipmentCount},</if>
+                <if test="labadminId != null">#{labadminId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateById" parameterType="jmu.lx.lab.entity.Lab">
+        update lab
+        <set>
+            <if test="number != null">
+                number = #{number},
+            </if>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="type != null">
+                type = #{type},
+            </if>
+            <if test="equipmentCount != null">
+                equipment_count = #{equipmentCount},
+            </if>
+            <if test="labadminId != null">
+                labadmin_id = #{labadminId},
+            </if>
+        </set>
+        where id = #{id} 
+    </update>
+
+</mapper>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jmu.lx.lab.mapper.SemesterMapper">
+
+    <sql id="Base_Column_List">
+        id,name,weeks,is_cur_semester
+    </sql>
+
+    <select id="selectAll" resultType="jmu.lx.lab.entity.Semester">
+        select
+        <include refid="Base_Column_List" />
+        from semester
+        <where>
+            <if test="id != null"> and id= #{id}</if>
+            <if test="name != null"> and name= #{name}</if>
+            <if test="weeks != null"> and weeks= #{weeks}</if>
+            <if test="isCurSemester != null"> and is_cur_semester= #{isCurSemester}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectById" resultType="jmu.lx.lab.entity.Semester">
+        select
+        <include refid="Base_Column_List" />
+        from semester
+        where id = #{id}
+    </select>
+
+    <delete id="deleteById">
+        delete from semester
+        where  id = #{id}
+    </delete>
+
+    <insert id="insert" parameterType="jmu.lx.lab.entity.Semester" useGeneratedKeys="true">
+        insert into semester
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test="id != null">id,</if>
+                <if test="name != null">name,</if>
+                <if test="weeks != null">weeks,</if>
+                <if test="isCurSemester != null">is_cur_semester,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+                <if test="id != null">#{id},</if>
+                <if test="name != null">#{name},</if>
+                <if test="weeks != null">#{weeks},</if>
+                <if test="isCurSemester != null">#{isCurSemester},</if>
+        </trim>
+    </insert>
+
+    <update id="updateById" parameterType="jmu.lx.lab.entity.Semester">
+        update semester
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="weeks != null">
+                weeks = #{weeks},
+            </if>
+            <if test="isCurSemester != null">
+                is_cur_semester = #{isCurSemester},
+            </if>
+        </set>
+        where id = #{id} 
+    </update>
+
+
+    <select id="selectCurSemester" resultType="jmu.lx.lab.entity.Semester">
+        select *
+        from semester
+        where is_cur_semester = 1
+    </select>
+
+    <update id="updateCurSemester" parameterType="jmu.lx.lab.entity.Semester">
+        update semester
+        set is_cur_semester = 0
+        where is_cur_semester = 1;
+        update semester
+        set is_cur_semester = 1
+        where id = #{id}
+    </update>
+
+</mapper>

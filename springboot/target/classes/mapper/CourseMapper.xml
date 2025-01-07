@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jmu.lx.lab.mapper.CourseMapper">
+
+    <sql id="Base_Column_List">
+        id,number,name,grade,t1,t2,week,teacher_name,type,t3,t4,t5,t6
+    </sql>
+
+    <select id="selectAll" resultType="jmu.lx.lab.entity.Course">
+        select course.*
+        from course
+        <where>
+            <if test="id != null"> and id= #{id}</if>
+
+            <if test="name != null"> and course.name like concat('%', #{name}, '%')</if>
+
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectById" resultType="jmu.lx.lab.entity.Course">
+        select
+        <include refid="Base_Column_List" />
+        from course
+        where id = #{id}
+    </select>
+
+    <delete id="deleteById">
+        delete from course
+        where  id = #{id}
+    </delete>
+
+    <insert id="insert" parameterType="jmu.lx.lab.entity.Course" useGeneratedKeys="true">
+        insert into course
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="number != null">number,</if>
+            <if test="name != null">name,</if>
+            <if test="grade != null">grade,</if>
+            <if test="t1 != null">t1,</if>
+            <if test="t2 != null">t2,</if>
+            <if test="week != null">week,</if>
+            <if test="teacher_name != null">teacher_name,</if>
+            <if test="type != null">type,</if>
+            <if test="t3 != null">t3,</if>
+            <if test="t4 != null">t4,</if>
+            <if test="t5 != null">t5,</if>
+            <if test="t6 != null">t6,</if>
+
+
+
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="number != null">#{number},</if>
+            <if test="name != null">#{name},</if>
+            <if test="grade != null">#{grade},</if>
+            <if test="t1 != null">#{t1},</if>
+            <if test="t2 != null">#{t2},</if>
+            <if test="week != null">#{week},</if>
+            <if test="teacher_name != null">#{teacher_name},</if>
+            <if test="type != null">#{type},</if>
+            <if test="t3 != null">#{t3},</if>
+            <if test="t4 != null">#{t4},</if>
+            <if test="t5 != null">#{t5},</if>
+            <if test="t6 != null">#{t6},</if>
+
+
+        </trim>
+    </insert>
+
+    <update id="updateById" parameterType="jmu.lx.lab.entity.Course">
+        update course
+        <set>
+            <if test="number != null">
+                number = #{number},
+            </if>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="grade != null">
+                grade = #{grade},
+            </if>
+            <if test="t1 != null">
+                t1 = #{t1},
+            </if>
+            <if test="t2 != null">
+                t2 = #{t2},
+            </if>
+            <if test="week != null">
+                week = #{week},
+            </if>
+            <if test="teacher_name != null">
+                teacher_name = #{teacher_name},
+            </if>
+            <if test="type != null">
+                type = #{type},
+            </if>
+            <if test="t3 != null">
+                t3 = #{t3},
+            </if>
+            <if test="t4 != null">
+                t4 = #{t4},
+            </if>
+            <if test="t5 != null">
+                t5 = #{t5},
+            </if>
+            <if test="t6 != null">
+                t6 = #{t6},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jmu.lx.lab.mapper.BorrowMapper">
+
+    <sql id="Base_Column_List">
+        id,lab_id,semester_id,week,day,session_id,student_id,reason,apply_date,status
+    </sql>
+
+    <select id="selectAll" resultType="jmu.lx.lab.entity.Borrow">
+        select borrow.*, lab.number as labNumber, semester.name as semesterName, student.name as studentName, session.name as sessionName
+        from borrow
+        left join lab on borrow.lab_id = lab.id
+        left join semester on borrow.semester_id = semester.id
+        left join student on borrow.student_id = student.id
+        left join session on borrow.session_id = session.id
+        <where>
+            <if test="id != null"> and id= #{id}</if>
+            <if test="labId != null"> and borrow.lab_id= #{labId}</if>
+            <if test="studentId != null"> and borrow.student_id= #{studentId}</if>
+            <if test="status != null"> and staatus= #{status}</if>
+            <if test="sessionId != null"> and borrow.session_id= #{sessionId}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectById" resultType="jmu.lx.lab.entity.Borrow">
+        select
+        <include refid="Base_Column_List" />
+        from borrow
+        where id = #{id}
+    </select>
+
+    <delete id="deleteById">
+        delete from borrow
+        where  id = #{id}
+    </delete>
+
+    <insert id="insert" parameterType="jmu.lx.lab.entity.Borrow" useGeneratedKeys="true">
+        insert into borrow
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test="id != null">id,</if>
+                <if test="labId != null">lab_id,</if>
+                <if test="semesterId != null">semester_id,</if>
+                <if test="week != null">week,</if>
+                <if test="day != null">day,</if>
+                <if test="sessionId != null">session_id,</if>
+                <if test="studentId != null">student_id,</if>
+                <if test="reason != null">reason,</if>
+                <if test="applyDate != null">apply_date,</if>
+                <if test="status != null">status,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+                <if test="id != null">#{id},</if>
+                <if test="labId != null">#{labId},</if>
+                <if test="semesterId != null">#{semesterId},</if>
+                <if test="week != null">#{week},</if>
+                <if test="day != null">#{day},</if>
+                <if test="sessionId != null">#{sessionId},</if>
+                <if test="studentId != null">#{studentId},</if>
+                <if test="reason != null">#{reason},</if>
+                <if test="applyDate != null">#{applyDate},</if>
+                <if test="status != null">#{status},</if>
+        </trim>
+    </insert>
+
+    <update id="updateById" parameterType="jmu.lx.lab.entity.Borrow">
+        update borrow
+        <set>
+            <if test="id != null">
+                id = #{id},
+            </if>
+            <if test="labId != null">
+                lab_id = #{labId},
+            </if>
+            <if test="semesterId != null">
+                semester_id = #{semesterId},
+            </if>
+            <if test="week != null">
+                week = #{week},
+            </if>
+            <if test="day != null">
+                day = #{day},
+            </if>
+            <if test="sessionId != null">
+                session_id = #{sessionId},
+            </if>
+            <if test="studentId != null">
+                student_id = #{studentId},
+            </if>
+            <if test="reason != null">
+                reason = #{reason},
+            </if>
+            <if test="applyDate != null">
+                apply_date = #{applyDate},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        where id = #{id} 
+    </update>
+
+    <update id="pass" parameterType="jmu.lx.lab.entity.Borrow">
+        update borrow
+        set status = '通过'
+        where id = #{id}
+    </update>
+
+    <update id="noPass" parameterType="jmu.lx.lab.entity.Borrow">
+        update borrow
+        set status = '驳回'
+        where id = #{id}
+    </update>
+
+    <update id="finish" parameterType="jmu.lx.lab.entity.Borrow">
+        update borrow
+        set status = '使用完毕'
+        where id = #{id}
+    </update>
+
+    <select id="isBorrowed" parameterType="jmu.lx.lab.entity.Borrow" resultType="int">
+        SELECT COUNT(*)
+        FROM borrow
+        WHERE lab_id = #{labId}
+          AND semester_id = #{semesterId}
+          AND week = #{week}
+          AND day = #{day}
+          AND session_id = #{sessionId}
+          AND status = '通过';
+    </select>
+
+</mapper>

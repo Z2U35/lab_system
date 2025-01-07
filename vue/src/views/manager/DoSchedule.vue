@@ -1,0 +1,224 @@
+<template>
+  <div>
+
+    <div class="table">
+      <el-table :data="tableData" strip @selection-change="handleSelectionChange">
+        <el-table-column prop="id" label="序号" width="70" align="center" sortable></el-table-column>
+        <el-table-column prop="semesterName" label="上课学期" width="120" sortable :filters="headFilters['semesterName']"
+                         :filter-method="filterHandler"></el-table-column>
+        <el-table-column prop="startWeek" label="开始周"></el-table-column>
+        <el-table-column prop="endWeek" label="结束周"></el-table-column>
+        <el-table-column prop="week" label="星期"></el-table-column>
+        <el-table-column prop="sessionName" label="节次"></el-table-column>
+        <el-table-column prop="courseName" label="课程名" width="130"></el-table-column>
+        <el-table-column prop="clazz" label="上课班级" :filters="headFilters['clazz']"
+                         :filter-method="filterHandler"></el-table-column>
+        <el-table-column prop="number" label="上课人数"></el-table-column>
+        <el-table-column prop="labType" label="实验室类型"></el-table-column>
+        <el-table-column prop="teacherName" label="申请教师" :filters="headFilters['teacherName']"
+                         :filter-method="filterHandler"></el-table-column>
+        <el-table-column prop="status" label="排课状态" :filters="headFilters['status']"
+                         :filter-method="filterHandler"></el-table-column>
+        <el-table-column label="操作" align="center" width="90">
+          <template v-slot="scope">
+            <el-button v-if="scope.row.status === '未排课'" size="mini" type="primary" plain @click="doScheduled(scope.row)">排课</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="pagination">
+        <el-pagination
+            background
+            @current-change="handleCurrentChange"
+            :current-page="pageNum"
+            :page-sizes="[5, 10, 20]"
+            :page-size="pageSize"
+            layout="total, prev, pager, next"
+            :total="total">
+        </el-pagination>
+      </div>
+    </div>
+
+
+    <el-dialog title="实验室排课" :visible.sync="fromVisible" width="40%" :close-on-click-modal="false" destroy-on-close>
+      <el-form :model="form" label-width="100px" style="padding-right: 50px" :rules="rules" ref="formRef">
+        <el-form-item label="实验室编号" prop="labId">
+          <el-select v-model="form.labId" placeholder="请选择实验室编号" style="width: 100%">
+            <el-option  v-for="item in freeLabs" :label="item.number" :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="fromVisible = false">取 消</el-button>
+        <el-button type="primary" @click="save">确 定</el-button>
+      </div>
+    </el-dialog>
+
+
+  </div>
+</template>
+
+<script>
+import doSchedule from "@/views/manager/DoSchedule.vue";
+
+export default {
+  name: "DoSchedule",
+  computed: {
+    doSchedule() {
+      return doSchedule
+    }
+  },
+  data() {
+    return {
+      tableData: [],  // 所有的数据
+      pageNum: 1,   // 当前的页码
+      pageSize: 10,  // 每页显示的个数
+      total: 0,
+      name: null,
+      number: null,
+      fromVisible: false,
+      form: {},
+      isEditing: null,
+      user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
+      curSemester: null,
+      rules: {
+        labId: [
+          {required: true, message: '请选择实验室编号', trigger: 'blur'},
+        ],
+      },
+      ids: [],
+      freeLabs: [],
+      list: [],
+      headFilters: []
+    }
+  },
+  created() {
+    this.load(1)
+    this.getList()
+  },
+  methods: {
+    getList() {
+      this.$request.get('/schedule/selectAll').then(res => {
+        if (res.code === '200') {
+          this.list = res.data
+          this.tableFilter(this.list)
+        } else {
+          this.$message.error(res.msg)
+        }
+      })
+    },
+    tableFilter(list){ // 传入表格数据
+      let filters = {}
+      if (list.length) {
+        Object.keys(list[0]).forEach(item => { // 拿到第一条数据，将key值组成数组，并将key给filters对象作为键名，值为空数组
+          filters[item] = []
+        })
+        list.forEach(item => { // 遍历表格的数据数组
+          for (let key in item) { // 遍历数据数组的每一项(对象)
+            if (filters.hasOwnProperty(key) && !filters[key].find(i => i.text == item[key])) { // 如果filters对象中有当前键名（它的值是数组）,并且该数组中不含当前值的对象
+              filters[key].push({text: item[key], value: item[key]}) // filters当前键名对应的值（数组），再push该值组成的对象（el-table筛选条件的格式）
+            }
+          }
+        })
+      }
+      this.headFilters = filters
+    },
+    filterHandler(value, row, column) {
+      const property = column['property'];
+      return row[property] === value;
+    },
+    loadFreeLabs() {
+      this.$request({
+        url: '/schedule/selectFreeLabs/',
+        method: 'POST',
+        data: this.form
+      }).then(res => {
+        if (res.code === '200') {  // 表示成功保存
+          this.freeLabs = res.data
+        } else {
+          this.$message.error(res.msg)  // 弹出错误的信息
+        }
+      })
+    },
+    save() {   // 保存按钮触发的逻辑  它会触发新增或者更新
+      console.log(this.form)
+      this.$refs.formRef.validate((valid) => {
+        if (valid) {
+          this.$request({
+            url: '/schedule/doScheduled',
+            method: 'PUT',
+            data: this.form
+          }).then(res => {
+            if (res.code === '200') {  // 表示成功保存
+              this.$message.success('操作成功')
+              this.load(1)
+              this.fromVisible = false
+            } else {
+              this.$message.error(res.msg)  // 弹出错误的信息
+            }
+          })
+        }
+      })
+    },
+    doScheduled(row) {
+      this.form = JSON.parse(JSON.stringify(row))  // 给form对象赋值  注意要深拷贝数据
+      this.loadFreeLabs(row)
+      this.fromVisible = true   // 打开弹窗
+    },
+    del(id) {   // 单个删除
+      this.$confirm('您确定删除吗？', '确认删除', {type: "warning"}).then(response => {
+        this.$request.delete('/schedule/delete/' + id).then(res => {
+          if (res.code === '200') {   // 表示操作成功
+            this.$message.success('操作成功')
+            this.load(1)
+          } else {
+            this.$message.error(res.msg)  // 弹出错误的信息
+          }
+        })
+      }).catch(() => {
+      })
+    },
+    handleSelectionChange(rows) {   // 当前选中的所有的行数据
+      this.ids = rows.map(v => v.id)
+    },
+    delBatch() {   // 批量删除
+      if (!this.ids.length) {
+        this.$message.warning('请选择数据')
+        return
+      }
+      this.$confirm('您确定批量删除这些数据吗？', '确认删除', {type: "warning"}).then(response => {
+        this.$request.delete('/schedule/delete/batch', {data: this.ids}).then(res => {
+          if (res.code === '200') {   // 表示操作成功
+            this.$message.success('操作成功')
+            this.load(1)
+          } else {
+            this.$message.error(res.msg)  // 弹出错误的信息
+          }
+        })
+      }).catch(() => {
+      })
+    },
+    load(pageNum) {  // 分页查询
+      if (pageNum) this.pageNum = pageNum
+      this.$request.get('/schedule/selectPage', {
+        params: {
+          pageNum: this.pageNum,
+          pageSize: this.pageSize,
+          number: this.number,
+        }
+      }).then(res => {
+        this.tableData = res.data?.list
+        this.total = res.data?.total
+      })
+    },
+    handleCurrentChange(pageNum) {
+      this.load(pageNum)
+    },
+  }
+}
+</script>
+
+<style scoped>
+
+</style>
