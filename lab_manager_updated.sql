@@ -831,6 +831,6 @@ CREATE TRIGGER `check_password_length` BEFORE INSERT ON `teacher` FOR EACH ROW B
     END IF;
 END
 ;;
-delimiter ;
+delimiter ;57
 
 SET FOREIGN_KEY_CHECKS = 1;

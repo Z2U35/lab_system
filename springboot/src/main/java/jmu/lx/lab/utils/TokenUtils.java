@@ -24,37 +24,36 @@ import java.util.Date;
 
 /**
  * Token 工具类
- * 该类负责 JWT 的生成和解析，以及获取当前登录用户信息等操作。
+ * 功能：
+ * 1. 生成 JWT Token；
+ * 2. 解析 Token；
+ * 3. 根据 Token 获取当前登录用户的信息。
  */
 @Component
 public class TokenUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(TokenUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(TokenUtils.class); // 日志记录器
 
-    // 静态的 Service 变量，用于在静态方法中调用
+    // 静态 Service 对象，用于静态方法中调用
     private static AdminService staticAdminService;
     private static LabAdminService staticLabAdminService;
     private static TeacherService staticTeacherService;
     private static StudentService staticStudentService;
 
-    // 注入 AdminService
+    // 注入 Service 实例，通过 Spring 容器管理
     @Resource
     AdminService adminService;
-
-    // 注入 LabAdminService
     @Resource
     LabAdminService labAdminService;
-
-    // 注入 TeacherService
     @Resource
     TeacherService teacherService;
-
-    // 注入 StudentService
     @Resource
     StudentService studentService;
 
     /**
-     *  通过 @PostConstruct 注解，在 Bean 初始化完成后，将注入的 Service 赋值给静态变量
+     * 使用 @PostConstruct 注解，在 Bean 初始化完成后，
+     * 将通过依赖注入获取的 Service 实例赋值给静态变量。
+     * 目的是在静态方法中可以使用这些 Service。
      */
     @PostConstruct
     public void setUserService() {
@@ -66,51 +65,52 @@ public class TokenUtils {
 
     /**
      * 生成 JWT Token
-     * @param data  要存储在 Token 中的数据，例如 用户ID-用户角色
-     * @param sign  用于加密 Token 的密钥，通常是用户的密码
-     * @return 生成的 JWT Token 字符串
+     * @param data  数据载荷，存储在 Token 中（如 "用户ID-角色"）
+     * @param sign  密钥，用于加密 Token（如用户的密码）
+     * @return  返回生成的 JWT Token 字符串
      */
     public static String createToken(String data, String sign) {
-        // 创建 JWT Token
+        // 使用 JWT 创建 Token，包含数据和过期时间，使用 HMAC256 加密
         return JWT.create()
-                .withAudience(data) // 将数据保存到 token 里面，作为载荷
-                .withExpiresAt(DateUtil.offsetHour(new Date(), 2)) // 设置 token 过期时间为 2 小时后
-                .sign(Algorithm.HMAC256(sign)); // 使用 HMAC256 算法，并使用密钥 sign 进行加密
+                .withAudience(data) // 设置数据载荷，例如 "用户ID-角色"
+                .withExpiresAt(DateUtil.offsetHour(new Date(), 2)) // 设置过期时间为当前时间+2小时
+                .sign(Algorithm.HMAC256(sign)); // 使用密钥（sign）进行加密
     }
 
     /**
-     * 获取当前登录的用户信息
-     * 从请求头中获取 Token，并根据 Token 中存储的用户信息查询数据库，返回用户信息
-     * @return  当前登录用户的 Account 对象，如果获取失败或未登录，则返回一个空的 Account 对象
+     * 获取当前登录用户的信息
+     * @return  当前登录用户的 Account 对象，如果未登录或出错则返回一个空 Account
      */
     public static Account getCurrentUser() {
         try {
-            // 从 RequestContextHolder 中获取 HttpServletRequest 对象
+            // 获取当前请求对象
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            // 从请求头中获取 token
+            // 从请求头中获取 Token
             String token = request.getHeader(Constants.TOKEN);
             if (ObjectUtil.isNotEmpty(token)) {
-                // 解析 token，获取用户角色和用户ID
-                String userRole = JWT.decode(token).getAudience().get(0);
-                String userId = userRole.split("-")[0];  // 获取用户id
-                String role = userRole.split("-")[1];    // 获取角色
-                // 根据角色信息，调用不同的 Service 查询用户信息
+                // 解析 Token，获取数据载荷
+                String userRole = JWT.decode(token).getAudience().get(0); // 获取存储的 "用户ID-角色"
+                String userId = userRole.split("-")[0];  // 提取用户ID
+                String role = userRole.split("-")[1];    // 提取用户角色
+                // 根据角色调用对应的 Service 查询用户信息
                 if (RoleEnum.ADMIN.name().equals(role)) {
-                    return staticAdminService.selectById(Integer.valueOf(userId));
+                    return staticAdminService.selectById(Integer.valueOf(userId)); // 查询管理员信息
                 }
                 if (RoleEnum.LABADMIN.name().equals(role)) {
-                    return staticLabAdminService.selectById(Integer.valueOf(userId));
+                    return staticLabAdminService.selectById(Integer.valueOf(userId)); // 查询实验员信息
                 }
                 if (RoleEnum.TEACHER.name().equals(role)) {
-                    return staticTeacherService.selectById(Integer.valueOf(userId));
+                    return staticTeacherService.selectById(Integer.valueOf(userId)); // 查询教师信息
                 }
                 if (RoleEnum.STUDENT.name().equals(role)) {
-                    return staticStudentService.selectById(Integer.valueOf(userId));
+                    return staticStudentService.selectById(Integer.valueOf(userId)); // 查询学生信息
                 }
             }
         } catch (Exception e) {
-            log.error("获取当前用户信息出错", e); // 记录获取用户信息错误日志
+            // 捕获所有异常并记录错误日志
+            log.error("获取当前用户信息出错", e);
         }
-        return new Account();  // 返回空的账号对象
+        // 如果获取用户信息失败，返回一个空的 Account 对象
+        return new Account();
     }
 }

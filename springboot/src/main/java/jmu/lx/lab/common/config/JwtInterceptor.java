@@ -50,7 +50,7 @@ public class JwtInterceptor implements HandlerInterceptor {
     private StudentService studentService;
 
     /**
-     * 在请求到达 Controller 之前执行的方法
+     * 用于在请求到达控制器（Controller）之前，验证请求是否携带有效的 JWT（JSON Web Token）。如果验证通过，请求可以继续访问受保护的资源；否则会抛出异常，拒绝访问。
      * @param request  HTTP 请求对象
      * @param response HTTP 响应对象
      * @param handler  处理器对象
